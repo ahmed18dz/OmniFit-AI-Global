@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniFit AI | Next-Gen AI Fitness Platform</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/posenet"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --neon: #00ff88;
+            --purple: #8a2be2;
+            --dark-bg: #050505;
+            --card-bg: rgba(255, 255, 255, 0.05);
+        }
+
+        * { box-sizing: border-box; transition: all 0.3s ease; }
+        body {
+            background-color: var(--dark-bg);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding-bottom: 90px;
+            overflow-x: hidden;
+        }
+
+        /* Premium Header */
+        header {
+            background: rgba(0,0,0,0.9);
+            backdrop-filter: blur(15px);
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--neon);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo { font-weight: 900; font-size: 26px; letter-spacing: -1px; text-transform: uppercase; }
+        .logo span { color: var(--neon); }
+
+        .btn-portal {
+            background: transparent;
+            border: 1px solid var(--neon);
+            color: var(--neon);
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        /* Main Container */
+        .container { padding: 20px; max-width: 1200px; margin: auto; }
+        .page { display: none; animation: fadeIn 0.6s ease-out; }
+        .active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* AI Vision Module */
+        .vision-box {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #111;
+            border-radius: 25px;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid var(--neon);
+            box-shadow: 0 0 40px rgba(0, 255, 136, 0.15);
+        }
+        video, canvas { position: absolute; top:0; left:0; width: 100%; height: 100%; object-fit: cover; }
+        .ai-label { 
+            position: absolute; top: 15px; left: 15px; 
+            background: var(--neon); color: black; 
+            padding: 5px 12px; border-radius: 5px; 
+            font-size: 10px; font-weight: 900; z-index: 100;
+        }
+
+        /* Dashboard UI */
+        .card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 25px;
+            margin-top: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+        .stat-item { background: rgba(0,0,0,0.4); padding: 15px; border-radius: 15px; text-align: center; }
+        .stat-item h4 { margin: 0; font-size: 32px; color: var(--neon); }
+
+        /* Action Button */
+        .btn-cta {
+            background: linear-gradient(90deg, var(--neon), var(--purple));
+            color: black;
+            border: none;
+            padding: 20px;
+            border-radius: 15px;
+            font-weight: 900;
+            width: 100%;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+            text-transform: uppercase;
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
+        }
+
+        /* Bottom Menu */
+        nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: rgba(0,0,0,0.95);
+            display: flex;
+            justify-content: space-around;
+            padding: 20px 0;
+            border-top: 1px solid #222;
+        }
+        nav div { color: #555; font-size: 24px; cursor: pointer; transition: 0.3s; }
+        nav div.active-tab { color: var(--neon); text-shadow: 0 0 10px var(--neon); }
+
+        /* Coach Portal Specifics */
+        .client-card { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #333; }
+        .status-online { color: var(--neon); font-size: 12px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">OMNIFIT <span>AI</span></div>
+    <button class="btn-portal" onclick="togglePortal()" id="portalBtn">COACH PORTAL</button>
+</header>
+
+<div class="container">
+    <div id="user-page" class="page active">
+        <div class="vision-box">
+            <div class="ai-label">AI VISION SYSTEM ENABLED</div>
+            <video id="video" playsinline></video>
+            <canvas id="output"></canvas>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item"><small>REPS</small><h4 id="rep-count">0</h4></div>
+            <div class="stat-item"><small>ACCURACY</small><h4 id="acc-pct">--%</h4></div>
+        </div>
+
+        <button class="btn-cta" onclick="startVision()">Activate AI Tracker</button>
+        
+        <div class="card">
+            <p style="margin:0; opacity:0.7"><i class="fas fa-info-circle"></i> Today's Focus: <strong>Chest & Shoulders</strong>. AI will monitor your form.</p>
+        </div>
+    </div>
+
+    <div id="coach-page" class="page">
+        <div class="card">
+            <h2>Management Dashboard</h2>
+            <div class="stats">
+                <div class="stat-item"><small>Total Revenue</small><h4>$4.2k</h4></div>
+                <div class="stat-item"><small>Active Users</small><h4>214</h4></div>
+            </div>
+        </div>
+        <div class="card">
+            <h3>Live Client Sessions</h3>
+            <div class="client-card">
+                <div><strong>James Wilson (Miami)</strong><br><small>Advanced Lifting</small></div>
+                <div class="status-online">● LIVE AI</div>
+            </div>
+            <div class="client-item">
+                <button class="btn-cta" style="padding:10px; font-size:12px;">Contact All Clients</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="pro-page" class="page">
+        <div class="card" style="text-align:center; border: 2px solid var(--neon);">
+            <i class="fas fa-gem" style="font-size: 50px; color: var(--neon); margin-bottom: 15px;"></i>
+            <h2>ELITE MEMBERSHIP</h2>
+            <p>Full AI analysis + Personal Pro Coaches</p>
+            <h1 style="font-size: 50px;">$19.99<small style="font-size:14px; opacity:0.5">/mo</small></h1>
+            <button class="btn-cta" onclick="alert('Redirecting to Stripe USA...')">Get Started</button>
+        </div>
+    </div>
+</div>
+
+<nav>
+    <div onclick="switchTab('user-page', this)" class="active-tab"><i class="fas fa-home"></i></div>
+    <div onclick="switchTab('coach-page', this)"><i class="fas fa-users"></i></div>
+    <div onclick="switchTab('pro-page', this)"><i class="fas fa-crown"></i></div>
+</nav>
+
+<script>
+    let video = document.getElementById('video');
+    let canvas = document.getElementById('output');
+    let ctx = canvas.getContext('2d');
+
+    // Tab Switching
+    function switchTab(id, el) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.querySelectorAll('nav div').forEach(n => n.classList.remove('active-tab'));
+        if(el) el.classList.add('active-tab');
+    }
+
+    function togglePortal() {
+        const isUser = document.getElementById('user-page').classList.contains('active');
+        if(isUser) {
+            switchTab('coach-page');
+            document.getElementById('portalBtn').innerText = "USER PORTAL";
+        } else {
+            switchTab('user-page');
+            document.getElementById('portalBtn').innerText = "COACH PORTAL";
+        }
+    }
+
+    // AI Vision Logic
+    async function startVision() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = stream;
+            video.play();
+            
+            video.onloadedmetadata = async () => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const net = await posenet.load();
+                detectPose(net);
+            };
+        } catch (e) {
+            alert("Please enable camera access for AI tracking.");
+        }
+    }
+
+    async function detectPose(net) {
+        const pose = await net.estimateSinglePose(video);
+        drawResults(pose);
+        requestAnimationFrame(() => detectPose(net));
+    }
+
+    function drawResults(pose) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        pose.keypoints.forEach(kp => {
+            if(kp.score > 0.5) {
+                ctx.fillStyle = "#00ff88";
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = "#00ff88";
+                ctx.beginPath();
+                ctx.arc(kp.position.x, kp.position.y, 6, 0, 2*Math.PI);
+                ctx.fill();
+            }
+        });
+        
+        // Mocking AI analytics
+        document.getElementById('acc-pct').innerText = Math.floor(Math.random() * 5 + 91) + "%";
+    }
+</script>
+
+</body>
+</html>
