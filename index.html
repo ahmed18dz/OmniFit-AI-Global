@@ -2,181 +2,39 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OmniFit AI | The Future of Fitness</title>
-    
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22OmniFit%20AI%22,%22short_name%22:%22OmniFit%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22#050505%22,%22theme_color%22:%22#00ff88%22}">
-
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/posenet"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
-
-    <style>
-        :root { --neon: #00ff88; --purple: #8a2be2; --bg: #050505; --glass: rgba(255,255,255,0.08); }
-        body { background: var(--bg); color: white; font-family: 'Inter', sans-serif; margin: 0; padding-bottom: 90px; overflow-x: hidden; }
-        
-        header { 
-            padding: 20px; display: flex; justify-content: space-between; align-items: center;
-            background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100;
-            border-bottom: 1px solid var(--glass);
-        }
-
-        .logo { font-weight: 900; font-size: 24px; color: white; text-transform: uppercase; }
-        .logo span { color: var(--neon); }
-
-        .container { padding: 20px; max-width: 1000px; margin: auto; }
-        
-        /* Vision Container */
-        .vision-card {
-            background: #000; border-radius: 30px; position: relative; overflow: hidden;
-            border: 2px solid var(--neon); box-shadow: 0 0 50px rgba(0,255,136,0.1);
-        }
-        video, canvas { width: 100%; display: block; }
-        .vision-overlay { position: absolute; top: 15px; left: 15px; background: var(--neon); color: black; padding: 5px 12px; border-radius: 8px; font-size: 10px; font-weight: bold; }
-
-        /* Stats Design */
-        .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-        .stat-card { background: var(--glass); padding: 20px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
-        .stat-card h1 { margin: 0; color: var(--neon); font-size: 35px; }
-
-        /* Action Buttons */
-        .btn-prime {
-            background: linear-gradient(135deg, var(--neon), var(--purple));
-            color: black; border: none; padding: 20px; border-radius: 18px; width: 100%;
-            font-weight: 900; font-size: 16px; cursor: pointer; margin-top: 20px;
-        }
-
-        /* Nav Bar */
-        nav { position: fixed; bottom: 0; width: 100%; background: rgba(0,0,0,0.9); display: flex; justify-content: space-around; padding: 20px 0; border-top: 1px solid var(--glass); }
-        nav i { color: #555; font-size: 24px; transition: 0.3s; cursor: pointer; }
-        nav i.active { color: var(--neon); }
-
-        .page { display: none; animation: fadeIn 0.4s ease; }
-        .active-page { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    </style>
+    <title>OmniFit AI</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.11.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/posenet@2.2.2"></script>
 </head>
 <body>
 
 <header>
-    <div class="logo">OmniFit <span>AI</span></div>
-    <div id="ai-indicator" style="font-size: 10px; color: var(--neon); border: 1px solid var(--neon); padding: 4px 10px; border-radius: 15px;">AI STANDBY</div>
+    <div class="logo">OmniFit AI</div>
+    <div id="status">READY</div>
 </header>
 
 <div class="container">
-    <div id="home" class="page active-page">
-        <div class="vision-card">
-            <div class="vision-overlay">AI LIVE SCANNER</div>
-            <video id="webcam" playsinline style="transform: scaleX(-1);"></video>
-            <canvas id="canvas" style="transform: scaleX(-1);"></canvas>
+    <div id="home-page" class="page active-page">
+        <div id="vision-box">
+            <video id="video" playsinline muted></video>
+            <canvas id="canvas"></canvas>
         </div>
-
-        <div class="dashboard-grid">
-            <div class="stat-card">
-                <small>REPS</small>
-                <h1 id="rep-val">0</h1>
-            </div>
-            <div class="stat-card">
-                <small>ACCURACY</small>
-                <h1 id="acc-val">--%</h1>
-            </div>
-        </div>
-
-        <button class="btn-prime" onclick="initOmniAI()">ACTIVATE AI COACH</button>
+        <button class="btn-start" onclick="startCamera()">START AI</button>
     </div>
 
-    <div id="coach" class="page">
-        <div class="stat-card" style="margin-bottom: 20px; background: var(--purple); color: white;">
-            <h2>Coach Dashboard</h2>
-            <p>You have 3 clients live now.</p>
-        </div>
-        <div class="stat-card">
-            <p>System Online: <strong>Global Server (USA)</strong></p>
-        </div>
+    <div id="coach-page" class="page">
+        <h2>Coach Dashboard</h2>
+        <div class="card"><p>Revenue: $0.00</p></div>
     </div>
 </div>
 
 <nav>
-    <i class="fas fa-home active" onclick="showTab('home', this)"></i>
-    <i class="fas fa-chart-line" onclick="showTab('coach', this)"></i>
-    <i class="fas fa-cog"></i>
+    <i class="fas fa-home active" onclick="navTo('home-page', this)"></i>
+    <i class="fas fa-dumbbell" onclick="navTo('coach-page', this)"></i>
 </nav>
 
-<script>
-    let video = document.getElementById('webcam');
-    let canvas = document.getElementById('canvas');
-    let ctx = canvas.getContext('2d');
-    let lastSpeakTime = 0;
-
-    // AI Voice System
-    function aiSpeak(msg) {
-        const now = Date.now();
-        if (now - lastSpeakTime < 3000) return; // منع تكرار الصوت بسرعة
-        const speech = new SpeechSynthesisUtterance(msg);
-        speech.lang = 'en-US';
-        speech.rate = 1.0;
-        window.speechSynthesis.speak(speech);
-        lastSpeakTime = now;
-    }
-
-    async function initOmniAI() {
-        document.getElementById('ai-indicator').innerText = "AI BOOTING...";
-        aiSpeak("Initializing Omni Fit Eye Vision. Please stand back.");
-
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        video.srcObject = stream;
-        video.play();
-
-        video.onloadedmetadata = async () => {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const net = await posenet.load();
-            document.getElementById('ai-indicator').innerText = "AI TRACKING ACTIVE";
-            runAI(net);
-        };
-    }
-
-    async function runAI(net) {
-        const pose = await net.estimateSinglePose(video);
-        drawPose(pose);
-        analyzeMovement(pose);
-        requestAnimationFrame(() => runAI(net));
-    }
-
-    function drawPose(pose) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        pose.keypoints.forEach(point => {
-            if (point.score > 0.5) {
-                ctx.fillStyle = "#00ff88";
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = "#00ff88";
-                ctx.beginPath();
-                ctx.arc(point.position.x, point.position.y, 6, 0, 2*Math.PI);
-                ctx.fill();
-            }
-        });
-    }
-
-    function analyzeMovement(pose) {
-        let acc = Math.floor(Math.random() * 5 + 92); 
-        document.getElementById('acc-val').innerText = acc + "%";
-        
-        if (acc > 95) {
-            aiSpeak("Perfect form!");
-        }
-    }
-
-    function showTab(id, el) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
-        document.getElementById(id).classList.add('active-page');
-        document.querySelectorAll('nav i').forEach(i => i.classList.remove('active'));
-        el.classList.add('active');
-    }
-</script>
+<script src="script.js"></script>
 </body>
 </html>
